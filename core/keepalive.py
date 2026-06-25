@@ -83,10 +83,10 @@ class KeepAlive:
         await self.setup()
         await self._close_event.wait()
 
-    async def _done(self, future: asyncio.Future[None]) -> None:
+    def _done(self, future: asyncio.Future[None]) -> None:
         if not self._closing or not self._closed:
             self.reset()
-            return await self.setup()
+            # return await self.setup()
 
     async def _runner(self) -> None:
         while True:
@@ -121,6 +121,6 @@ class KeepAlive:
 
             dts = fp.read()
             if dts:
-                self._last_scan = datetime.datetime.fromisoformat(dts)
+                self.runner._last_scan = datetime.datetime.fromisoformat(dts)
 
             fp.close()

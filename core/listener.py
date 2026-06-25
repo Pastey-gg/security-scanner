@@ -14,6 +14,7 @@ limitations under the License.
 """
 
 import asyncio
+import json
 import logging
 from typing import TYPE_CHECKING, Any
 
@@ -58,9 +59,11 @@ class Listener:
         connection = await asyncpg.connect(dsn)
         await connection.add_listener(event, self.callback)  # type: ignore
 
-    async def callback(self, conn: asyncpg.Connection[Any], pid: int, channel: str, payload: PasteRecordT) -> None:
-        paste = payload["record"]
-        LOGGER.info("Received paste from listener: %s", paste["id"])
+    async def callback(self, conn: asyncpg.Connection[Any], pid: int, channel: str, payload: str) -> None:
+        data: PasteRecordT = json.loads(payload)
+        paste = data["record"]
+
+        LOGGER.info("Received paste from listener: %s")
         await self.runner.run_pipeline(paste)
 
     async def close(self) -> None:
