@@ -56,7 +56,7 @@ class Listener:
         dsn = CONFIG["general"]["dsn"]
         event = CONFIG["general"]["event_name"]
 
-        connection = await asyncpg.connect(dsn)
+        self.connection = await asyncpg.connect(dsn)
         await connection.add_listener(event, self.callback)  # type: ignore
 
     async def callback(self, conn: asyncpg.Connection[Any], pid: int, channel: str, payload: str) -> None:
