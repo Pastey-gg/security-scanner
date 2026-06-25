@@ -40,6 +40,7 @@ class Runner:
 
     def __init__(self) -> None:
         self._running_event = asyncio.Event()
+        self._running_event.set()
         self._closing: bool = False
         self._last_scan: datetime.datetime | None = None
 
