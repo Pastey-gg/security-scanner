@@ -63,7 +63,7 @@ class Listener:
         data: PasteRecordT = json.loads(payload)
         paste = data["record"]
 
-        LOGGER.info("Received paste from listener: %s")
+        LOGGER.info("Received paste from listener: %s", paste["id"])
         await self.runner.run_pipeline(paste)
 
     async def close(self) -> None:
