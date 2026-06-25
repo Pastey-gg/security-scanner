@@ -88,13 +88,15 @@ class Runner:
 
         return files
 
-    async def fetch_unscanned(self, *, dt: datetime.datetime) -> list[PasteRecord]:
+    async def fetch_unscanned(self, *, dt: datetime.datetime | None) -> list[PasteRecord]:
         LOGGER.info("Fetching unscanned pastes.")
+
+        dt = dt or datetime.datetime(2026, 1, 1, 0, 0)
         query = """SELECT * FROM pastes WHERE created_at > $1 AND deleted_at IS NULL"""
 
         async with self.pool.acquire() as conn:
             pastes: list[PasteRecord] = await conn.fetch(query, dt, record_class=PasteRecord)
-            
+
         return pastes
 
     async def run_pipeline(self, paste: PasteT | PasteRecord, /, *, save: bool = False) -> None:

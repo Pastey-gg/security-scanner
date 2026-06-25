@@ -90,8 +90,10 @@ class KeepAlive:
 
     async def _runner(self) -> None:
         while True:
-            if not self.runner._last_scan:
-                pastes = await self.runner.fetch_unscanned(dt=datetime.datetime.now(tz=datetime.UTC))
+            if not self.runner._last_scan or datetime.datetime.now(
+                tz=datetime.UTC
+            ) > self.runner._last_scan + datetime.timedelta(minutes=30):
+                pastes = await self.runner.fetch_unscanned(dt=self.runner._last_scan)
 
                 for paste in pastes:
                     try:
