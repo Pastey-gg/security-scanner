@@ -75,10 +75,11 @@ class Runner:
 
     async def remove_paste(self, paste: PasteT | PasteRecord) -> None:
         LOGGER.info("Paste %s is being removed after failing pipeline.", paste["id"])
-        query = """UPDATE pastes deleted_at = $1 WHERE id = $1"""
+        dt = datetime.datetime.now(tz=datetime.UTC)
+        query = """UPDATE pastes SET deleted_at = $2 WHERE id = $1"""
 
         async with self.pool.acquire() as conn:
-            await conn.execute(query, paste["id"])
+            await conn.execute(query, paste["id"], dt)
 
     async def gather(self, paste: PasteT | PasteRecord) -> list[FileRecord]:
         query = """SELECT * FROM files WHERE paste_id = $1"""
