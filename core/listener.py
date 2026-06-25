@@ -57,7 +57,7 @@ class Listener:
         event = CONFIG["general"]["event_name"]
 
         self.connection = await asyncpg.connect(dsn)
-        await connection.add_listener(event, self.callback)  # type: ignore
+        await self.connection.add_listener(event, self.callback)  # type: ignore
 
     async def callback(self, conn: asyncpg.Connection[Any], pid: int, channel: str, payload: str) -> None:
         data: PasteRecordT = json.loads(payload)
