@@ -101,6 +101,10 @@ class KeepAlive:
                     except Exception as e:
                         LOGGER.warning("Error running pipeline: %s", e)
 
+                await self.save_scan(dt=self.runner._last_scan)
+
+            await asyncio.sleep(60)
+
     async def save_scan(self, *, dt: datetime.datetime | None = None) -> None:
         dt = dt or datetime.datetime.now(tz=datetime.UTC)
 
