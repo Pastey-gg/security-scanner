@@ -50,9 +50,12 @@ class Runner:
         await self.close()
 
     async def connect(self) -> None:
+        LOGGER.info("Attempting to connect to Database pool")
         self.pool = await asyncpg.create_pool(CONFIG["general"]["dsn"])
 
     async def close(self) -> None:
+        LOGGER.info("Closing security Runner.")
+
         pool: PoolT | None = getattr(self, "pool", None)
         if not pool:
             return
@@ -93,6 +96,8 @@ class Runner:
         return pastes
 
     async def run_pipeline(self, paste: PasteT | PasteRecord, /, *, save: bool = False) -> None:
+        LOGGER.info("Running security pipeline for %s", paste["id"])
+
         if self._closing:
             return
 

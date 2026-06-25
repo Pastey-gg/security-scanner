@@ -49,6 +49,7 @@ class KeepAlive:
         if self._has_setup:
             return
 
+        LOGGER.info("Starting security scanners...")
         await self.runner.connect()
         await self.listener.setup()
 
@@ -57,7 +58,10 @@ class KeepAlive:
         self._background.add_done_callback(self._done)
         self._has_setup = True
 
+        LOGGER.info("Successfully setup security scanners...")
+
     async def close(self) -> None:
+        LOGGER.info("Closing security scanners...")
         self._closing = True
 
         await self.listener.close()

@@ -50,6 +50,8 @@ class Listener:
         if self.connection or self._setup:
             raise RuntimeError(f"{self!r} has already been setup.")
 
+        LOGGER.info("Setting-up Security Listener.")
+
         dsn = CONFIG["general"]["dsn"]
         event = CONFIG["general"]["event_name"]
 
@@ -58,12 +60,15 @@ class Listener:
 
     async def callback(self, conn: asyncpg.Connection[Any], pid: int, channel: str, payload: PasteRecordT) -> None:
         paste = payload["record"]
+        LOGGER.info("Received paste from listener: %s", paste["id"])
         await self.runner.run_pipeline(paste)
 
     async def close(self) -> None:
         """Closes and resets the listener state."""
         if not self.connection:
             return
+
+        LOGGER.info("Closing Security Listener.")
 
         try:
             async with asyncio.timeout(10):

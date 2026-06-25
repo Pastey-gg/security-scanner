@@ -14,8 +14,13 @@ limitations under the License.
 """
 
 import asyncio
+import logging
 
 import core
+
+
+logging.basicConfig(level=logging.DEBUG)
+LOGGER: logging.Logger = logging.getLogger(__name__)
 
 
 def main() -> None:
@@ -25,6 +30,7 @@ def main() -> None:
         keep = core.KeepAlive(runner=runner, listener=listener)
         runner.keepalive = keep
 
+        LOGGER.info("Starting Security Scanner")
         async with keep:
             await keep.run()
 
