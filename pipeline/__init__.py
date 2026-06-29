@@ -22,4 +22,4 @@ if TYPE_CHECKING:
     from .scanners import BaseScanner
 
 
-SCANNERS: tuple[type[BaseScanner], ...] = (JeansonScanner,)
+SCANNERS: tuple[type[BaseScanner], ...] = (GeneralHacks,)
