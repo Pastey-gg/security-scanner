@@ -27,6 +27,8 @@ from .config import CONFIG
 
 
 if TYPE_CHECKING:
+    from pipeline.scanners import BaseScanner
+
     from .keepalive import KeepAlive
 
 
@@ -81,6 +83,8 @@ class Runner:
         async with self.pool.acquire() as conn:
             await conn.execute(query, paste["id"], dt)
 
+    async def annotate_file(self, *, file: FileRecord, scanner: BaseScanner) -> None: ...
+
     async def gather(self, paste: PasteT | PasteRecord) -> list[FileRecord]:
         query = """SELECT * FROM files WHERE paste_id = $1"""
 
@@ -113,14 +117,14 @@ class Runner:
 
         should_continue: bool = True
         files: list[FileRecord] = await self.gather(paste)
-        should_continue = await asyncio.to_thread(self.run_scanners, files)
+        should_continue = await self.run_scanners(files)
 
-        if not should_continue:
+        if should_continue is False:
             await self.remove_paste(paste)
 
         self._running_event.set()
 
-    def run_scanners(self, files: list[FileRecord]) -> bool:
+    async def run_scanners(self, files: list[FileRecord]) -> bool:
         for file in files:
             for scanner in pipeline.SCANNERS:
                 inst = scanner(file)
@@ -128,5 +132,8 @@ class Runner:
 
                 if not inst.passes():
                     return False
+
+                if inst.score >= 50 and inst.extras():
+                    await self.annotate_file(file=file, scanner=inst)
 
         return True

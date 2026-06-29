@@ -35,3 +35,6 @@ class BaseScanner(abc.ABC):
     @property
     @abc.abstractmethod
     def score(self) -> int: ...
+
+    @abc.abstractmethod
+    def extras(self) -> Any: ...
