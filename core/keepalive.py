@@ -93,6 +93,7 @@ class KeepAlive:
             if not self.runner._last_scan or datetime.datetime.now(
                 tz=datetime.UTC
             ) > self.runner._last_scan + datetime.timedelta(minutes=30):
+                LOGGER.info("Last scan expired... Running security pipelines.")
                 pastes = await self.runner.fetch_unscanned(dt=self.runner._last_scan)
 
                 for paste in pastes:
@@ -102,10 +103,10 @@ class KeepAlive:
                         LOGGER.warning("Error running pipeline: %s", e)
 
                 await self.save_scan(dt=self.runner._last_scan)
-
             await asyncio.sleep(60)
 
     async def save_scan(self, *, dt: datetime.datetime | None = None) -> None:
+        LOGGER.info("Saving last scan.")
         dt = dt or datetime.datetime.now(tz=datetime.UTC)
 
         async with self._lock:
@@ -113,6 +114,7 @@ class KeepAlive:
                 fp.write(dt.isoformat())
 
     async def load_scan(self) -> None:
+        LOGGER.info("Loading last scan.")
         async with self._lock:
             try:
                 fp = open(".lastscan")  # noqa: SIM115
