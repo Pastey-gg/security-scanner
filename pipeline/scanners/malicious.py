@@ -50,3 +50,6 @@ class GeneralHacks(BaseScanner):
     @property
     def score(self) -> int:
         return self._score
+    
+    def extras(self) -> Any:
+        return {}
