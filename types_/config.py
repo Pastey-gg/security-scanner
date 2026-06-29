@@ -21,5 +21,10 @@ class GeneralConfigT(TypedDict):
     event_name: str
 
 
+class MaliciousScanners(TypedDict):
+    rules: list[str]
+
+
 class ConfigT(TypedDict):
     general: GeneralConfigT
+    malicious_scanners: MaliciousScanners

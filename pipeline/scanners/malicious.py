@@ -15,6 +15,9 @@ limitations under the License.
 
 from typing import TYPE_CHECKING, Any
 
+from types_.pastes import FileRecord
+
+from ...core.config import CONFIG
 from . import BaseScanner
 
 
@@ -22,23 +25,24 @@ if TYPE_CHECKING:
     from types_.pastes import FileRecord
 
 
-__all__ = ("JeansonScanner",)
+__all__ = ("GeneralHacks",)
 
 
-class JeansonScanner(BaseScanner):
+class GeneralHacks(BaseScanner):
     def __init__(self, file: FileRecord, /, *args: Any, **kwargs: Any) -> None:
         super().__init__(file, *args, **kwargs)
         self._score: int = 0
 
     def scan(self) -> None:
-        kws = ("jeansontools", "jeansonhackz", "jeanson ancheta")
-        content = self.file.content.lower()
+        kws: list[str] = CONFIG["malicious_scanners"]["rules"]
 
         for kw in kws:
-            if kw not in content:
+            kw = kw.lower()
+
+            if kw not in (str(self.file.name).lower(), self.file.content.lower()):
                 continue
 
-            self._score += 100
+            self._score = 100
 
     def passes(self) -> bool:
         return self._score < 100
