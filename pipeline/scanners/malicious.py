@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING, Any
 
 from types_.pastes import FileRecord
 
-from ...core.config import CONFIG
+from core.config import CONFIG
 from . import BaseScanner
 
 
