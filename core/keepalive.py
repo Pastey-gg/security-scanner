@@ -98,7 +98,7 @@ class KeepAlive:
 
                 for paste in pastes:
                     try:
-                        await self.runner.run_pipeline(paste, save=True)
+                        await self.runner.run_pipeline(paste, save=False)
                     except Exception as e:
                         LOGGER.warning("Error running pipeline: %s", e)
 
