@@ -38,11 +38,9 @@ class GeneralHacks(BaseScanner):
 
         for kw in kws:
             kw = kw.lower()
-
-            if kw not in (str(self.file.name).lower(), self.file.content.lower()):
-                continue
-
-            self._score = 100
+            
+            if kw in str(self.file.name).lower() or kw in self.file.content.lower():
+                self._score = 100
 
     def passes(self) -> bool:
         return self._score < 100
