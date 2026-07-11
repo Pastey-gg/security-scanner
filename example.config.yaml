@@ -1,3 +1,9 @@
 general:
   dsn:
   event_name:
+malicious_scanners:
+  rules:
+    - "BadWord"
+    - "https://some-link.com"
+  compound_rules:
+    - ["Multi", "word", "checks"]

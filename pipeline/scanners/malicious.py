@@ -15,9 +15,9 @@ limitations under the License.
 
 from typing import TYPE_CHECKING, Any
 
+from core.config import CONFIG
 from types_.pastes import FileRecord
 
-from core.config import CONFIG
 from . import BaseScanner
 
 
@@ -38,8 +38,16 @@ class GeneralHacks(BaseScanner):
 
         for kw in kws:
             kw = kw.lower()
-            
+
             if kw in str(self.file.name).lower() or kw in self.file.content.lower():
+                self._score = 100
+
+        content_lower = self.file.content.lower()
+        name_lower = str(self.file.name).lower()
+        compound: list[list[str]] = CONFIG["malicious_scanners"].get("compound_rules", [])
+
+        for terms in compound:
+            if all(t.lower() in content_lower or t.lower() in name_lower for t in terms):
                 self._score = 100
 
     def passes(self) -> bool:
@@ -48,6 +56,6 @@ class GeneralHacks(BaseScanner):
     @property
     def score(self) -> int:
         return self._score
-    
+
     def extras(self) -> Any:
         return {}
