@@ -27,5 +27,4 @@ if TYPE_CHECKING:
 class TokenScanner(BaseScanner):
     SERVICE = ScanService.TOKENS
 
-    def scan(self) -> ScanResultT:
-        ...
+    def scan(self) -> ScanResultT: ...

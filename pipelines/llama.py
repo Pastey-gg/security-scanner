@@ -27,5 +27,4 @@ if TYPE_CHECKING:
 class LlamaScanner(BaseScanner):
     SERVICE = ScanService.LLAMA
 
-    def scan(self) -> ScanResultT:
-        ...
+    def scan(self) -> ScanResultT: ...

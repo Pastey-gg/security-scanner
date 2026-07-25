@@ -17,7 +17,4 @@ from rabbitmq_amqp_python_client import AMQPMessagingHandler, Event
 
 
 class Handler(AMQPMessagingHandler):
-    
     def on_message(self, event: Event) -> ...: ...
-
-

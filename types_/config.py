@@ -24,7 +24,7 @@ class MQConfigT(TypedDict):
 class DatabaseConfigT(TypedDict):
     dsn: str
 
-    
+
 class ConfigT(TypedDict):
     message_queue: MQConfigT
     database: DatabaseConfigT

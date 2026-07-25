@@ -27,5 +27,4 @@ if TYPE_CHECKING:
 class RulesScanner(BaseScanner):
     SERVICE = ScanService.RULES
 
-    def scan(self) -> ScanResultT:
-        ...
+    def scan(self) -> ScanResultT: ...

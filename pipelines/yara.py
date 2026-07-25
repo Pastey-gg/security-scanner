@@ -27,5 +27,4 @@ if TYPE_CHECKING:
 class YARAScanner(BaseScanner):
     SERVICE = ScanService.YARA
 
-    def scan(self) -> ScanResultT:
-        ...
+    def scan(self) -> ScanResultT: ...
