@@ -13,5 +13,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from .config import CONFIG as CONFIG
-from .enums import *
+from typing import TYPE_CHECKING
+
+from core.enums import *
+
+from .base import BaseScanner
+
+
+if TYPE_CHECKING:
+    from types_.scanners import ScanResultT
+
+
+class TokenScanner(BaseScanner):
+    SERVICE = ScanService.TOKENS
+
+    def scan(self) -> ScanResultT:
+        ...

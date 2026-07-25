@@ -13,5 +13,29 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from .config import CONFIG as CONFIG
-from .enums import *
+import enum
+
+
+__all__ = ("ScanService", "ScanSeverity", "ScanStatus")
+
+
+# fmt: off
+class ScanStatus(enum.Enum):
+    passed = enum.auto()
+    failed = enum.auto()
+    manual = enum.auto()
+
+
+class ScanService(enum.StrEnum):
+    RULES  = enum.auto()
+    YARA   = enum.auto()
+    LLAMA  = enum.auto()
+    TOKENS = enum.auto()
+
+
+class ScanSeverity(enum.IntEnum):
+    none     = 0
+    low      = 1
+    moderate = 2
+    high     = 3
+    critical = 4

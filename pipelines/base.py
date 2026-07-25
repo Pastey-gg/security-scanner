@@ -13,13 +13,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import TYPE_CHECKING
-
-from .scanners.malicious import *
+import abc
+from typing import TYPE_CHECKING, ClassVar
 
 
 if TYPE_CHECKING:
-    from .scanners import BaseScanner
+    from core.enums import ScanService
+    from types_.scanners import ScanResultT
 
 
-SCANNERS: tuple[type[BaseScanner], ...] = (GeneralHacks,)
+class BaseScanner(abc.ABC):
+    SERVICE: ClassVar[ScanService]
+
+    @abc.abstractmethod
+    def scan(self) -> ScanResultT: ...

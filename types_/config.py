@@ -16,15 +16,15 @@ limitations under the License.
 from typing import TypedDict
 
 
-class GeneralConfigT(TypedDict):
+class MQConfigT(TypedDict):
     dsn: str
-    event_name: str
+    queue_name: str
 
 
-class MaliciousScanners(TypedDict):
-    rules: list[str]
+class DatabaseConfigT(TypedDict):
+    dsn: str
 
-
+    
 class ConfigT(TypedDict):
-    general: GeneralConfigT
-    malicious_scanners: MaliciousScanners
+    message_queue: MQConfigT
+    database: DatabaseConfigT

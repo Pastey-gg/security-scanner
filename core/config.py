@@ -15,12 +15,12 @@ limitations under the License.
 
 from typing import TYPE_CHECKING
 
-from yaml import Loader, load
+import yaml
 
 
 if TYPE_CHECKING:
-    from ..types_.config import ConfigT
+    from types_.config import ConfigT
 
 
 with open("config.yaml", "rb") as fp:
-    CONFIG: ConfigT = load(fp, Loader=Loader)
+    CONFIG: ConfigT = yaml.load(fp, Loader=yaml.CLoader)

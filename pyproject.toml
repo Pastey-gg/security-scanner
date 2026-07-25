@@ -1,13 +1,12 @@
 [project]
 name = "security-scanner"
-version = "0.1.0"
+version = "0.2.0"
 description = "Microservice for pastey.gg which scans pastes for security issues."
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
-    "asyncpg>=0.31.0",
-    "asyncpg-stubs>=0.31.2",
     "pyyaml>=6.0.3",
+    "rabbitmq-amqp-python-client>=1.0.0",
 ]
 
 [tool.ruff]
@@ -80,5 +79,5 @@ pythonVersion = "3.14"
 
 [dependency-groups]
 dev = [
-    "ruff>=0.15.18",
+    "ruff>=0.16.0",
 ]

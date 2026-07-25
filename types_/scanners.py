@@ -13,5 +13,29 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from .config import CONFIG as CONFIG
-from .enums import *
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, NotRequired, TypedDict
+
+
+if TYPE_CHECKING:
+    import datetime
+
+    from core.enums import *
+
+
+class LineDetailsT(TypedDict):
+    start_line: int
+    start_char: int
+    end_line: int
+    end_char: int
+
+
+class ScanResultT(TypedDict):
+    status: ScanStatus
+    service: ScanService
+    severity: ScanSeverity
+    reason: NotRequired[str]
+    lines: NotRequired[LineDetailsT]
+    timestamp: datetime.datetime
+    paste_id: str

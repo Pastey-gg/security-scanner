@@ -12,29 +12,3 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-
-import abc
-from typing import TYPE_CHECKING, Any
-
-
-if TYPE_CHECKING:
-    from types_.pastes import FileRecord
-
-
-class BaseScanner(abc.ABC):
-    def __init__(self, file: FileRecord, /, *args: Any, **kwargs: Any) -> None:
-        self.file = file
-        self.paste_id = file.paste_id
-
-    @abc.abstractmethod
-    def scan(self) -> None: ...
-
-    @abc.abstractmethod
-    def passes(self) -> bool: ...
-
-    @property
-    @abc.abstractmethod
-    def score(self) -> int: ...
-
-    @abc.abstractmethod
-    def extras(self) -> Any: ...

@@ -13,5 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from .config import CONFIG as CONFIG
-from .enums import *
+from rabbitmq_amqp_python_client import AMQPMessagingHandler, Event
+
+
+class Handler(AMQPMessagingHandler):
+    
+    def on_message(self, event: Event) -> ...: ...
+
+

@@ -13,32 +13,3 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import asyncio
-import logging
-
-import core
-
-
-logging.basicConfig(level=logging.DEBUG)
-LOGGER: logging.Logger = logging.getLogger(__name__)
-
-
-def main() -> None:
-    async def runner() -> None:
-        runner = core.Runner()
-        listener = core.Listener(runner)
-        keep = core.KeepAlive(runner=runner, listener=listener)
-        runner.keepalive = keep
-
-        LOGGER.info("Starting Security Scanner")
-        async with keep:
-            await keep.run()
-
-    try:
-        asyncio.run(runner())
-    except KeyboardInterrupt:
-        ...
-
-
-if __name__ == "__main__":
-    main()

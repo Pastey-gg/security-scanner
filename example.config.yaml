@@ -1,6 +1,9 @@
-general:
+message_queue:
   dsn:
-  event_name:
+  queue_name:
+database:
+  dsn:
+
 malicious_scanners:
   rules:
     - "BadWord"
