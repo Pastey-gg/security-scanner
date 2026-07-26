@@ -21,10 +21,15 @@ from .base import BaseScanner
 
 
 if TYPE_CHECKING:
-    from types_.scanners import ScanResultT
+    from types_.pastes import FilePaste
+
+    from .base import ScanResult
 
 
 class TokenScanner(BaseScanner):
+    PRIORITY = 1
     SERVICE = ScanService.TOKENS
 
-    def scan(self) -> ScanResultT: ...
+    def scan(self, paste: FilePaste) -> ScanResult: ...
+
+    def compile(self) -> None: ...

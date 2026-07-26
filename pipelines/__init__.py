@@ -12,3 +12,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+
+from .base import BaseScanner as BaseScanner
+from .llama import LlamaScanner as LlamaScanner
+from .rules import RulesScanner as RulesScanner
+from .tokens import TokenScanner as TokenScanner
+from .yara import YARAScanner as YARAScanner
+
+
+_SCANNERS = [LlamaScanner, RulesScanner, TokenScanner, YARAScanner]

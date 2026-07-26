@@ -14,16 +14,35 @@ limitations under the License.
 """
 
 import abc
-from typing import TYPE_CHECKING, ClassVar
+import dataclasses
+from typing import TYPE_CHECKING, Any, ClassVar
 
 
 if TYPE_CHECKING:
-    from core.enums import ScanService
-    from types_.scanners import ScanResultT
+    import datetime
+
+    from core.enums import ScanService, ScanSeverity, ScanStatus
+    from types_.pastes import FilePaste
+    from types_.scanners import LineDetailsT
+
+
+@dataclasses.dataclass
+class ScanResult:
+    status: ScanStatus
+    service: ScanService
+    severity: ScanSeverity
+    reason: str | None
+    lines: LineDetailsT | None
+    timestamp: datetime.datetime
+    paste_id: str
 
 
 class BaseScanner(abc.ABC):
+    PRIORITY: ClassVar[int]
     SERVICE: ClassVar[ScanService]
 
     @abc.abstractmethod
-    def scan(self) -> ScanResultT: ...
+    def compile(self, *args: Any, **kwargs: Any) -> Any: ...
+
+    @abc.abstractmethod
+    def scan(self, paste: FilePaste) -> ScanResult | None: ...
