@@ -5,6 +5,9 @@ description = "Microservice for pastey.gg which scans pastes for security issues
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
+    "pika>=1.4.2",
+    "psycopg[binary,pool]>=3.3.4",
+    "python-yara>=1.0.2",
     "pyyaml>=6.0.3",
     "rabbitmq-amqp-python-client>=1.0.0",
 ]
