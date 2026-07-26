@@ -87,7 +87,6 @@ class RulesScanner(BaseScanner):
                 # TODO: ...
                 ...
 
-            print(result)
             if result:
                 action = rule.action
                 service = self.SERVICE
