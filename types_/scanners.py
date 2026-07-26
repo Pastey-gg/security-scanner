@@ -15,7 +15,7 @@ limitations under the License.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, NotRequired, TypedDict
+from typing import TYPE_CHECKING, Literal, NotRequired, TypedDict
 
 
 if TYPE_CHECKING:
@@ -39,3 +39,10 @@ class ScanResultT(TypedDict):
     lines: NotRequired[LineDetailsT]
     timestamp: datetime.datetime
     paste_id: str
+
+
+class RuleT(TypedDict):
+    name: str
+    type: Literal["simple", "regex"]
+    rule: list[str] | str
+    action: Literal["review", "fail"]

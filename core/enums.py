@@ -16,14 +16,14 @@ limitations under the License.
 import enum
 
 
-__all__ = ("ScanService", "ScanSeverity", "ScanStatus")
+__all__ = ("RuleType", "ScanService", "ScanSeverity", "ScanStatus")
 
 
 # fmt: off
-class ScanStatus(enum.Enum):
-    passed = enum.auto()
-    failed = enum.auto()
-    manual = enum.auto()
+class ScanStatus(enum.StrEnum):
+    clear  = enum.auto()
+    fail   = enum.auto()
+    review = enum.auto()
 
 
 class ScanService(enum.StrEnum):
@@ -39,3 +39,9 @@ class ScanSeverity(enum.IntEnum):
     moderate = 2
     high     = 3
     critical = 4
+
+
+class RuleType(enum.StrEnum):
+    simple = enum.auto()
+    regex  = enum.auto()
+    yara   = enum.auto()
