@@ -13,11 +13,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import TypedDict
+from typing import TYPE_CHECKING, TypedDict
+
+
+if TYPE_CHECKING:
+    from .scanners import RuleT
 
 
 class MQConfigT(TypedDict):
-    dsn: str
+    host: str
+    port: int
     queue_name: str
 
 
@@ -28,3 +33,4 @@ class DatabaseConfigT(TypedDict):
 class ConfigT(TypedDict):
     message_queue: MQConfigT
     database: DatabaseConfigT
+    rules: list[RuleT]

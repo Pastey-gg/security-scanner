@@ -1,12 +1,16 @@
 message_queue:
-  dsn:
-  queue_name:
+  host: localhost
+  port: 5672
+  queue_name: "sec-scanner"
 database:
-  dsn:
-
-malicious_scanners:
-  rules:
-    - "BadWord"
-    - "https://some-link.com"
-  compound_rules:
-    - ["Multi", "word", "checks"]
+  dsn: "postgres://postgres:postgres@localhost:5432/echo"
+rules:
+  - name: "Some Link Rule"
+    type: simple                          # simple, regex
+    rule: ["https://some-link.com", ...]
+    action: review                        # review, fail
+  - name: "Hello World Regex"
+    type: regex                           # simple, regex
+    rule: |
+      "hello,?\s+world!?"
+    action: fail                          # review, fail
