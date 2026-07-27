@@ -15,6 +15,7 @@ limitations under the License.
 
 import dataclasses
 import datetime
+import logging
 import re
 from typing import TYPE_CHECKING
 
@@ -27,6 +28,9 @@ from .base import BaseScanner, ScanResult
 if TYPE_CHECKING:
     from types_.pastes import FilePaste
     from types_.scanners import RuleT
+
+
+LOGGER: logging.Logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass
@@ -91,7 +95,7 @@ class RulesScanner(BaseScanner):
                 action = rule.action
                 service = self.SERVICE
                 severity = ScanSeverity.high if action is ScanStatus.fail else ScanSeverity.moderate
-                reason = f"Failed on General Rule: '{rule.name}'."
+                reason = f"Failed on custom rule: '{rule.name}'."
                 now = datetime.datetime.now(tz=datetime.UTC)
 
                 return ScanResult(
@@ -104,6 +108,7 @@ class RulesScanner(BaseScanner):
                     lines=None,
                 )
 
-    def scan(self, paste: FilePaste) -> ScanResult | None:
-        result = self.scan_file(paste)
+    def scan(self, file: FilePaste) -> ScanResult | None:
+        LOGGER.info("Running scan for (%s: %s) with %s scanner.", file["paste_id"], file["id"], self.SERVICE)
+        result = self.scan_file(file)
         return result
