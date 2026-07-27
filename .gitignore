@@ -219,3 +219,6 @@ __marimo__/
 
 # Configs
 config.yaml
+
+# Llama
+resources/models/Llama*
