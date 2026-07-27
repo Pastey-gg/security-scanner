@@ -48,7 +48,7 @@ class Handler:
 
         if not body:
             LOGGER.warning("Message handler received bad message: No body.")
-            channel.basic_nack(method.delivery_tag)
+            channel.basic_reject(method.delivery_tag, requeue=False)
             return
 
         paste_id = body.decode()
@@ -56,27 +56,64 @@ class Handler:
 
         if not paste:
             LOGGER.warning("Message handler unable to find paste: %s.", paste_id)
-            channel.basic_reject(delivery_tag=method.delivery_tag, requeue=False)
+            channel.basic_reject(method.delivery_tag, requeue=False)
             return
 
-        # TODO: Error handling for RMQ (discard etc)
+        try:
+            LOGGER.info("Starting scan for '%s'.", paste_id)
+            self.wrap_scan(paste)
+            LOGGER.info("Processing scan for '%s' completed successfully.", paste_id)
+        except Exception as e:
+            LOGGER.error("Unable to process scan for '%s' - %s:\n", paste_id, e, exc_info=e)
+            channel.basic_reject(method.delivery_tag)
+        else:
+            # TODO: Notifier...
+            channel.basic_ack(method.delivery_tag)
 
+    def wrap_scan(self, paste: list[FilePaste]) -> None:
         for file in paste:
-            try:
-                result = self.scan(file)
-            except Exception:  # type: ignore
-                # TODO: ...
-                channel.basic_reject(delivery_tag=method.delivery_tag, requeue=False)
-                return
+            result = self.scan(file)
 
             if result:
-                self.process(result)
-                break
+                return self.process_result(result)
 
-        channel.basic_ack(delivery_tag=method.delivery_tag)
+    def scan(self, file: FilePaste) -> ScanResult | None:
+        for runner in self.worker.runners:
+            result = runner.scan(file)
+
+            if not result:
+                continue
+
+            if result.status is not ScanStatus.clear:
+                return result
+
+    def process_result(self, result: ScanResult) -> None:
+        if result.status is ScanStatus.clear:
+            return
+
+        if result.status is ScanStatus.review:
+            LOGGER.info("Manual review required for '%s'.", result.paste_id)
+            return
+
+        LOGGER.info(
+            "Removing paste '%s': %s (Scanner=%s, Severity=%s).",
+            result.paste_id,
+            result.reason,
+            result.service,
+            result.severity,
+        )
+        self.remove_paste(result.paste_id)
+
+    def remove_paste(self, paste_id: str) -> None:
+        assert self.worker.pool
+
+        query = """DELETE FROM pastes WHERE id = (%s)"""
+        with self.worker.pool.connection() as conn, conn.cursor() as cursor:
+            cursor.execute(query, (paste_id,))
 
     def fetch_paste(self, paste_id: str) -> list[FilePaste] | None:
         assert self.worker.pool
+
         query = """
         SELECT
             f.id,
@@ -99,17 +136,3 @@ class Handler:
             row: list[FilePaste] | None = cursor.fetchall()
 
         return row
-
-    def scan(self, paste: FilePaste) -> ScanResult | None:
-        for runner in self.worker.runners:
-            result = runner.scan(paste)
-
-            if not result:
-                continue
-
-            if result.status is not ScanStatus.clear:
-                return result
-
-    def process(self, result: ScanResult) -> ...:
-        # TODO: ...
-        print(result)
