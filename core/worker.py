@@ -98,6 +98,11 @@ class Worker:
         self.connection = pika.BlockingConnection(pika.ConnectionParameters(host=host, port=port, credentials=creds))
         self.channel = self.connection.channel()
 
+        self.channel.queue_declare(
+            queue=config["queue_name"],
+            durable=True,
+            arguments={"x-queue-type": "quorum"},
+        )
         self.channel.basic_qos(prefetch_count=1)
         self.channel.basic_consume(config["queue_name"], Handler(self))
 
