@@ -13,8 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
+import yara
+
+from core.config import CONFIG
 from core.enums import *
 
 from .base import BaseScanner
@@ -30,6 +33,20 @@ class YARAScanner(BaseScanner):
     PRIORITY = 2
     SERVICE = ScanService.YARA
 
-    def compile(self) -> None: ...
+    def __init__(self) -> None:
+        self._enabled: bool = False
+        self.rules: Any | None = None
 
-    def scan(self, file: FilePaste) -> ScanResult: ...
+    def compile(self) -> None:
+        self._enabled = CONFIG["yara"]["enable"]
+        if not self._enabled:
+            return
+
+        self.rules = yara.compile(filepath=CONFIG["yara"]["rules_path"])  # type: ignore
+
+    def scan(self, file: FilePaste) -> ScanResult | None:
+        if not self._enabled:
+            return
+
+        if self.rules is None:
+            return
