@@ -30,7 +30,19 @@ class DatabaseConfigT(TypedDict):
     dsn: str
 
 
+class YARAConfigT(TypedDict):
+    enable: bool
+    rules_path: str
+
+
+class LlamaConfigT(TypedDict):
+    enable: bool
+    model_path: str
+
+
 class ConfigT(TypedDict):
     message_queue: MQConfigT
     database: DatabaseConfigT
     rules: list[RuleT]
+    yara: YARAConfigT
+    llama: LlamaConfigT
