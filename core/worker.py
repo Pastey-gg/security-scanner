@@ -82,6 +82,8 @@ class Worker:
         config = CONFIG["message_queue"]
         host = config["host"]
         port = config["port"]
+        user = config["user"]
+        password = config["password"]
 
         dsn = CONFIG["database"]["dsn"]
         self.pool = ConnectionPool(
@@ -92,7 +94,8 @@ class Worker:
             kwargs={"row_factory": dict_row},
         )
 
-        self.connection = pika.BlockingConnection(pika.ConnectionParameters(host=host, port=port))
+        creds = pika.PlainCredentials(user, password)
+        self.connection = pika.BlockingConnection(pika.ConnectionParameters(host=host, port=port, credentials=creds))
         self.channel = self.connection.channel()
 
         self.channel.basic_qos(prefetch_count=1)

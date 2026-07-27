@@ -23,6 +23,8 @@ if TYPE_CHECKING:
 class MQConfigT(TypedDict):
     host: str
     port: int
+    user: str
+    password: str
     queue_name: str
 
 
