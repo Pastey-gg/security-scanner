@@ -13,7 +13,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import logging
+
 from core.worker import Worker
+
+
+LOG_FMT = "%(asctime)s [%(levelname)s] %(name)s (%(filename)s:%(lineno)d): %(message)s"
+DT_FMT = "%Y-%m-%d %H:%M:%S"
+
+logging.basicConfig(format=LOG_FMT, datefmt=DT_FMT, level=logging.INFO)
 
 
 def main() -> None:
