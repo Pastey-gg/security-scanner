@@ -35,7 +35,7 @@ if TYPE_CHECKING:
     from pipelines import BaseScanner
 
 
-LOGGER = logging.Logger = logging.getLogger(__name__)
+LOGGER: logging.Logger = logging.getLogger(__name__)
 
 
 class Worker:
@@ -59,6 +59,8 @@ class Worker:
         return self._runners
 
     def setup(self) -> None:
+        LOGGER.info("Compiling scanners...")
+
         for obj in _SCANNERS:
             scanner = obj()
             scanner.compile()
@@ -69,6 +71,8 @@ class Worker:
         self._setup = True
 
     def run(self) -> None:
+        LOGGER.info("Attempting to start worker for incoming message processing.")
+
         if self._running:
             return
 
@@ -97,9 +101,10 @@ class Worker:
         self._running = True
 
         try:
+            LOGGER.info("Worker is now listening for incoming messages...")
             self.channel.start_consuming()
         except KeyboardInterrupt:
-            LOGGER.warning("Shutting down due to KeyboardInterrupt")
+            LOGGER.warning("Shutting worker down due to KeyboardInterrupt")
         except Exception as e:
             LOGGER.critical("Unhandled exception during worker consuming '%s':\n", e, exc_info=e)
 
