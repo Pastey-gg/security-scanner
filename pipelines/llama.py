@@ -37,7 +37,7 @@ class LlamaScanner(BaseScanner):
     PRIORITY = 3
     SERVICE = ScanService.LLAMA
     FAILED_CATEGORIES = ("s1", "s3", "s4", "s6", "s9", "s11")
-    SEVERE_CATEGORIES = ("s3", "s4", "s11")
+    SEVERE_CATEGORIES = ("s3", "s4", "s5", "s7", "s11")
 
     def __init__(self) -> None:
         self._enabled: bool = False
@@ -111,7 +111,7 @@ class LlamaScanner(BaseScanner):
         is_safe = output[0] != "unsafe"
         category = output[1].lower()
 
-        if is_safe or category in ("s5", "s7", "s8", "s13"):
+        if is_safe or category in ("s8", "s13"):
             LOGGER.info("Llama Guard AI scan passed successfully: (%s, %s).", file["paste_id"], file["id"])
             return
 
@@ -126,7 +126,7 @@ class LlamaScanner(BaseScanner):
         )
 
         category_enum = GuardClassifier[category.upper()]
-        reason = f"Failed on Llama Guard AI: [{category}-{category_enum.value}] ({severity})"
+        reason = f"Failed on Llama Guard AI: [{category}-{category_enum.value}] (Severity={severity})"
         now = datetime.datetime.now(tz=datetime.UTC)
 
         return ScanResult(
