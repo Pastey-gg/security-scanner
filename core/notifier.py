@@ -48,7 +48,7 @@ class Notifier:
             "embeds": [
                 {
                     "title": f"Paste Created - {status}",
-                    "description": f"https://pastey.gg/{paste_id}\n\nReason: {reason}",
+                    "description": f"https://pastey.gg/{paste_id}\n\n**Reason: `{reason}`**",
                     "color": colour,
                     "footer": {"text": f"Pasted via {'web' if web else 'api'}"},
                     "thumbnail": {"url": "https://pastey.gg/logo.png"},
