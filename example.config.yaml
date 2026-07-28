@@ -2,7 +2,9 @@ message_queue:
   host: localhost
   port: 5672
   queue_name: "sec-scanner"
-
+  user: 
+  password: 
+  queue_name: 
 database:
   dsn: "postgres://postgres:postgres@localhost:5432/echo"
 
