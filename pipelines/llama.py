@@ -30,7 +30,6 @@ if TYPE_CHECKING:
     from types_.pastes import FilePaste
 
 
-
 LOGGER: logging.Logger = logging.getLogger(__name__)
 
 
@@ -99,16 +98,20 @@ class LlamaScanner(BaseScanner):
         resp = self.llama.create_completion(prompt=prompt, max_tokens=20, temperature=0.0)
 
         if not isinstance(resp, dict):
+            LOGGER.warning("Llama Guard AI responded with invalid output:( %s, %s).", file["paste_id"], file["id"])
             return
 
-        output: str = resp["choices"][0]["text"]
-        if not output:
+        output_str: str = resp["choices"][0]["text"]
+        if not output_str:
+            LOGGER.warning("Llama Guard AI responded with no output: (%s, %s).", file["paste_id"], file["id"])
             return
 
-        output = output.removeprefix("\n\n")
+        output_str = output_str.removeprefix("\n\n")
+        output = output_str.split("\n")
         is_safe = output[0] != "unsafe"
 
         if is_safe:
+            LOGGER.info("Llama Guard AI scan passed successfully: (%s, %s).", file["paste_id"], file["id"])
             return
 
         category = output[1].lower()
@@ -121,9 +124,9 @@ class LlamaScanner(BaseScanner):
             if action is ScanStatus.fail
             else ScanSeverity.moderate
         )
-        category_enum = GuardClassifier(category)
 
-        reason = f"Failed on Llama Guard AI: [{category}{category_enum.value}] ({severity})"
+        category_enum = GuardClassifier[category.upper()]
+        reason = f"Failed on Llama Guard AI: [{category}-{category_enum.value}] ({severity})"
         now = datetime.datetime.now(tz=datetime.UTC)
 
         return ScanResult(
