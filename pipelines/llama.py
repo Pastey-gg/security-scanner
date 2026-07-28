@@ -13,23 +13,125 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import datetime
+import logging
+import pathlib
 from typing import TYPE_CHECKING
 
+from llama_cpp import Llama
+
+from core import CONFIG
 from core.enums import *
 
-from .base import BaseScanner
+from .base import BaseScanner, ScanResult
 
 
 if TYPE_CHECKING:
     from types_.pastes import FilePaste
 
-    from .base import ScanResult
+
+
+LOGGER: logging.Logger = logging.getLogger(__name__)
 
 
 class LlamaScanner(BaseScanner):
     PRIORITY = 3
     SERVICE = ScanService.LLAMA
+    FAILED_CATEGORIES = ("s1", "s3", "s4", "s6", "s9", "s11", "s12")
+    SEVERE_CATEGORIES = ("s3", "s4", "s11")
 
-    def compile(self) -> None: ...
+    def __init__(self) -> None:
+        self._enabled: bool = False
+        self.llama: Llama | None = None
 
-    def scan(self, file: FilePaste) -> ScanResult: ...
+    def compile(self) -> None:
+        self._enabled = CONFIG["yara"]["enable"]
+        if not self._enabled:
+            return
+
+        fp = pathlib.Path(CONFIG["llama"]["model_path"])
+        if not fp.exists():
+            LOGGER.warning("Llama AI-Guard missing configuration for model path.")
+            self._enabled = False
+            return
+
+        self.llama = Llama(model_path=str(fp), n_ctx=2048, n_gpu_layers=0, verbose=False)
+        LOGGER.info("Successfully setup Llama-Guard AI Scanner...")
+
+    def build_prompt(self, content: str) -> str:
+        return f"""<|start_header_id|>user<|end_header_id|>
+
+        Task: Check if there is unsafe content in 'User' messages in conversations according to our safety policy with the below categories.
+
+        <BEGIN UNSAFE CONTENT CATEGORIES>
+        S1: Violent Crimes.
+        S2: Non-Violent Crimes.
+        S3: Sex-Related Crimes.
+        S4: Child Sexual Exploitation.
+        S5: Defamation.
+        S6: Specialized Advice.
+        S7: Privacy.
+        S8: Intellectual Property.
+        S9: Indiscriminate Weapons.
+        S10: Hate.
+        S11: Suicide & Self-Harm.
+        S12: Sexual Content.
+        S13: Elections.
+        <END UNSAFE CONTENT CATEGORIES>
+
+        <BEGIN CONVERSATION>
+
+        User: {content}
+
+        <END CONVERSATION>
+
+        Provide your safety assessment for ONLY THE LAST User message in the above conversation:
+        - First line must read 'safe' or 'unsafe'.
+        - If unsafe, a second line must include a comma-separated list of violated categories.<|eot_id|><|start_header_id|>assistant<|end_header_id|>"""
+
+    def scan(self, file: FilePaste) -> ScanResult | None:
+        if not self._enabled or not self.llama:
+            return
+
+        LOGGER.info("Running scan for (%s: %s) with Llama-Guard AI scanner.", file["paste_id"], file["id"])
+
+        prompt = self.build_prompt(file["content"])
+        resp = self.llama.create_completion(prompt=prompt, max_tokens=20, temperature=0.0)
+
+        if not isinstance(resp, dict):
+            return
+
+        output: str = resp["choices"][0]["text"]
+        if not output:
+            return
+
+        output = output.removeprefix("\n\n")
+        is_safe = output[0] != "unsafe"
+
+        if is_safe:
+            return
+
+        category = output[1].lower()
+        action = ScanStatus.fail if category in self.FAILED_CATEGORIES else ScanStatus.review
+        service = self.SERVICE
+        severity = (
+            ScanSeverity.critical
+            if category in self.SEVERE_CATEGORIES
+            else ScanSeverity.high
+            if action is ScanStatus.fail
+            else ScanSeverity.moderate
+        )
+        category_enum = GuardClassifier(category)
+
+        reason = f"Failed on Llama Guard AI: [{category}{category_enum.value}] ({severity})"
+        now = datetime.datetime.now(tz=datetime.UTC)
+
+        return ScanResult(
+            status=action,
+            service=service,
+            severity=severity,
+            reason=reason,
+            timestamp=now,
+            paste_id=file["paste_id"],
+            lines=None,
+        )
