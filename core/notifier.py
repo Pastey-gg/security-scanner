@@ -31,6 +31,7 @@ class Notifier:
         webhook = CONFIG["notifier"]["webhook_url"]
         paste_id = paste["paste_id"]
         web = paste["web"]
+        reason = "None" if not result else str(result.reason)
 
         if not result or result.status is ScanStatus.clear:
             colour = 0x198754
@@ -44,7 +45,7 @@ class Notifier:
             "embeds": [
                 {
                     "title": f"Paste Created - {status}",
-                    "description": f"https://pastey.gg/{paste_id}",
+                    "description": f"https://pastey.gg/{paste_id}\n\nReason: {reason}",
                     "color": colour,
                     "footer": {"text": f"Pasted via {'web' if web else 'api'}"},
                     "thumbnail": {"url": "https://pastey.gg/logo.png"},
