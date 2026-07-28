@@ -42,9 +42,14 @@ class LlamaConfigT(TypedDict):
     model_path: str
 
 
+class NotifierConfigT(TypedDict):
+    webhook_url: str
+
+
 class ConfigT(TypedDict):
     message_queue: MQConfigT
     database: DatabaseConfigT
     rules: list[RuleT]
     yara: YARAConfigT
     llama: LlamaConfigT
+    notifier: NotifierConfigT

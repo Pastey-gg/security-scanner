@@ -2,14 +2,21 @@ message_queue:
   host: localhost
   port: 5672
   queue_name: "sec-scanner"
+
 database:
   dsn: "postgres://postgres:postgres@localhost:5432/echo"
+
 llama:
   enable: true
   model_path: "resources/models/Llama-Guard-3-1B.Q4_K_M.gguf"
+
 yara:
   enable: true
   rules_path: "resources/yara"
+
+notifier:
+  webhook_url: ""
+
 rules:
   - name: "Some Link Rule"
     type: simple                          # simple, regex

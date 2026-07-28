@@ -19,6 +19,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from .enums import *
+from .notifier import Notifier
 
 
 if TYPE_CHECKING:
@@ -37,6 +38,7 @@ LOGGER: logging.Logger = logging.getLogger(__name__)
 class Handler:
     def __init__(self, worker: Worker) -> None:
         self.worker = worker
+        self.notifier = Notifier()
 
     def __call__(
         self,
@@ -61,16 +63,16 @@ class Handler:
 
         try:
             LOGGER.info("Starting scan for '%s'.", paste_id)
-            self.wrap_scan(paste)
+            result = self.wrap_scan(paste)
             LOGGER.info("Processing scan for '%s' completed successfully.", paste_id)
+            self.notifier.send_notification(paste[0], result=result)
         except Exception as e:
             LOGGER.error("Unable to process scan for '%s' - %s:\n", paste_id, e, exc_info=e)
             channel.basic_reject(method.delivery_tag)
         else:
-            # TODO: Notifier...
             channel.basic_ack(method.delivery_tag)
 
-    def wrap_scan(self, paste: list[FilePaste]) -> None:
+    def wrap_scan(self, paste: list[FilePaste]) -> ScanResult | None:
         for file in paste:
             result = self.scan(file)
 
@@ -87,13 +89,13 @@ class Handler:
             if result.status is not ScanStatus.clear:
                 return result
 
-    def process_result(self, result: ScanResult) -> None:
+    def process_result(self, result: ScanResult) -> ScanResult | None:
         if result.status is ScanStatus.clear:
-            return
+            return result
 
         if result.status is ScanStatus.review:
             LOGGER.info("Manual review required for '%s'.", result.paste_id)
-            return
+            return result
 
         LOGGER.info(
             "Removing paste '%s': %s (Scanner=%s, Severity=%s).",
@@ -103,6 +105,7 @@ class Handler:
             result.severity,
         )
         self.remove_paste(result.paste_id)
+        return result
 
     def remove_paste(self, paste_id: str) -> None:
         assert self.worker.pool
