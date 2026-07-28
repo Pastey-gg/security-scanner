@@ -109,10 +109,11 @@ class Handler:
 
     def remove_paste(self, paste_id: str) -> None:
         assert self.worker.pool
-
-        query = """DELETE FROM pastes WHERE id = (%s)"""
+        
+        dt = datetime.datetime.now(tz=datetime.UTC)
+        query = """UPDATE pastes SET deleted_at = (%s) WHERE id = (%s)"""
         with self.worker.pool.connection() as conn, conn.cursor() as cursor:
-            cursor.execute(query, (paste_id,))
+            cursor.execute(query, (dt, paste_id))
 
     def fetch_paste(self, paste_id: str) -> list[FilePaste] | None:
         assert self.worker.pool
