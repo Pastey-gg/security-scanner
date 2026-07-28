@@ -29,6 +29,9 @@ if TYPE_CHECKING:
 class Notifier:
     def send_notification(self, paste: FilePaste, *, result: ScanResult | None = None) -> None:
         webhook = CONFIG["notifier"]["webhook_url"]
+        if not webhook:
+            return
+
         paste_id = paste["paste_id"]
         web = paste["web"]
         reason = "None" if not result else str(result.reason)
