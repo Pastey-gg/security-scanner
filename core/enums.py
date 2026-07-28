@@ -16,7 +16,7 @@ limitations under the License.
 import enum
 
 
-__all__ = ("RuleType", "ScanService", "ScanSeverity", "ScanStatus")
+__all__ = ("GuardClassifier", "RuleType", "ScanService", "ScanSeverity", "ScanStatus")
 
 
 # fmt: off
@@ -45,3 +45,19 @@ class RuleType(enum.StrEnum):
     simple = enum.auto()
     regex  = enum.auto()
     yara   = enum.auto()
+
+
+class GuardClassifier(enum.StrEnum):
+    S1  = "Violent Crimes"
+    S2  = "Non-Violent Crimes"
+    S3  = "Sex-Related Crimes"
+    S4  = "Child Sexual Exploitation"
+    S5  = "Defamation"
+    S6  = "Specialized Advice"
+    S7  = "Privacy"
+    S8  = "Intellectual Property"
+    S9  = "Indiscriminate Weapons"
+    S10 = "Hate"
+    S11 = "Suicide & Self-Harm"
+    S12 = "Sexual Content"
+    S13 = "Elections"
