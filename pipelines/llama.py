@@ -36,7 +36,7 @@ LOGGER: logging.Logger = logging.getLogger(__name__)
 class LlamaScanner(BaseScanner):
     PRIORITY = 3
     SERVICE = ScanService.LLAMA
-    FAILED_CATEGORIES = ("s1", "s3", "s4", "s6", "s9", "s11", "s12")
+    FAILED_CATEGORIES = ("s1", "s3", "s4", "s6", "s9", "s11")
     SEVERE_CATEGORIES = ("s3", "s4", "s11")
 
     def __init__(self) -> None:
@@ -109,12 +109,12 @@ class LlamaScanner(BaseScanner):
         output_str = output_str.removeprefix("\n\n")
         output = output_str.split("\n")
         is_safe = output[0] != "unsafe"
+        category = output[1].lower()
 
-        if is_safe:
+        if is_safe or category in ("s5", "s7", "s8", "s13"):
             LOGGER.info("Llama Guard AI scan passed successfully: (%s, %s).", file["paste_id"], file["id"])
             return
 
-        category = output[1].lower()
         action = ScanStatus.fail if category in self.FAILED_CATEGORIES else ScanStatus.review
         service = self.SERVICE
         severity = (
