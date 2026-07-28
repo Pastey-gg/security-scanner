@@ -71,7 +71,7 @@ class RulesScanner(BaseScanner):
             self.rules.append(rule)
 
     def do_compund(self, name: str, content: str, *, rules: set[str]) -> bool:
-        return any(all(t.lower() in content or t.lower() in name for t in rule) for rule in rules)
+        return all(t.lower() in content or t.lower() in name for t in rules)
 
     def scan_file(self, file: FilePaste) -> ScanResult | None:
         name = file["name"] or "".lower()
