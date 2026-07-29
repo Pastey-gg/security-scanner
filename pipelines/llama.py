@@ -16,10 +16,13 @@ limitations under the License.
 import datetime
 import logging
 import math
+import multiprocessing
+import os
 import pathlib
 from typing import TYPE_CHECKING, Any
 
-from llama_cpp import CompletionLogprobs, Llama
+import numpy as np
+from llama_cpp import Llama
 
 from core import CONFIG
 from core.enums import *
@@ -34,6 +37,31 @@ if TYPE_CHECKING:
 
 LOGGER: logging.Logger = logging.getLogger(__name__)
 SEVERITY_RANK: dict[Any, int] = {ScanSeverity.moderate: 1, ScanSeverity.high: 2, ScanSeverity.critical: 3}
+CHARS_PER_TOKEN_CEILING: int = 8
+
+
+def available_cores() -> int:
+    try:
+        quota, period = pathlib.Path("/sys/fs/cgroup/cpu.max").read_text().split()
+        if quota != "max":
+            return max(1, int(int(quota) / int(period)))
+    except OSError, ValueError:
+        pass
+
+    try:
+        quota_us = int(pathlib.Path("/sys/fs/cgroup/cpu/cpu.cfs_quota_us").read_text())
+        period_us = int(pathlib.Path("/sys/fs/cgroup/cpu/cpu.cfs_period_us").read_text())
+
+        if quota_us > 0 and period_us > 0:
+            return max(1, int(quota_us / period_us))
+
+    except OSError, ValueError:
+        pass
+
+    try:
+        return max(1, len(os.sched_getaffinity(0)))
+    except AttributeError:
+        return max(1, multiprocessing.cpu_count())
 
 
 class LlamaScanner(BaseScanner):
@@ -45,10 +73,16 @@ class LlamaScanner(BaseScanner):
     def __init__(self) -> None:
         self._enabled: bool = False
         self.llama: Llama | None = None
-        self.ctx_count: int = 8192
-        self.max_chunks: int = 4
+        self.ctx_count: int = 4096
+        self.max_chunks: int = 2
+        self.max_scan_chars: int = 262_144
         self.threshold_offset: float = 0.0
         self._prompt_overhead: int = 0
+
+        self._safe_id: int = -1
+        self._unsafe_id: int = -1
+        self._fast_path: bool = False
+        self._min_floor: float = min(c.min_probability for c in POLICY)
 
     def compile(self) -> None:
         self._enabled = CONFIG["llama"]["enable"]
@@ -63,10 +97,24 @@ class LlamaScanner(BaseScanner):
 
         self.ctx_count = CONFIG["llama"].get("context_count") or self.ctx_count
         self.max_chunks = CONFIG["llama"].get("max_chunks", self.max_chunks)
+        self.max_scan_chars = CONFIG["llama"].get("max_scan_chars", self.max_scan_chars)
         self.threshold_offset = CONFIG["llama"].get("threshold_offset", 0.0)
 
-        self.llama = Llama(model_path=str(fp), n_ctx=self.ctx_count, n_gpu_layers=0, logits_all=True, verbose=False)
-        self._prompt_overhead = len(self.llama.tokenize(self.build_prompt("").encode(), add_bos=False))
+        cores = available_cores()
+        n_threads = CONFIG["llama"].get("threads") or max(cores // 2, 1)
+        n_threads_batch = CONFIG["llama"].get("threads_batch") or n_threads
+
+        self.llama = Llama(
+            model_path=str(fp),
+            n_ctx=self.ctx_count,
+            n_gpu_layers=0,
+            n_threads=n_threads,
+            n_threads_batch=n_threads_batch,
+            verbose=False,
+        )
+
+        self._resolve_decision_tokens()
+        self._prompt_overhead = len(self.llama.tokenize(self.build_prompt("").encode(), add_bos=False, special=True))
 
         if self._prompt_overhead > self.ctx_count // 2:
             LOGGER.warning(
@@ -76,11 +124,39 @@ class LlamaScanner(BaseScanner):
             )
 
         LOGGER.info(
-            "Successfully setup Llama-Guard AI Scanner (ctx=%d, policy=%d cats, overhead=%d tokens).",
+            "Successfully setup Llama-Guard AI Scanner (ctx=%d, policy=%d cats, overhead=%d tokens, "
+            "threads=%d/%d of %d cores, fast_path=%s).",
             self.ctx_count,
             len(POLICY),
             self._prompt_overhead,
+            n_threads,
+            n_threads_batch,
+            cores,
+            self._fast_path,
         )
+
+    def _resolve_decision_tokens(self) -> None:
+        assert self.llama is not None
+
+        safe = self.llama.tokenize(b"safe", add_bos=False, special=False)
+        unsafe = self.llama.tokenize(b"unsafe", add_bos=False, special=False)
+
+        self._safe_id = safe[0] if safe else -1
+        self._unsafe_id = unsafe[0] if unsafe else -1
+
+        self._fast_path = (
+            self._safe_id >= 0
+            and self._unsafe_id >= 0
+            and self._safe_id != self._unsafe_id
+            and hasattr(self.llama, "_ctx")
+            and hasattr(self.llama._ctx, "get_logits_ith")
+        )
+
+        if not self._fast_path:
+            LOGGER.warning(
+                "Llama Guard could not resolve decision tokens; falling back to generated labels. "
+                "Per-category probability floors will behave as on/off switches."
+            )
 
     def render_categories(self) -> str:
         blocks: list[str] = []
@@ -110,6 +186,11 @@ class LlamaScanner(BaseScanner):
             LOGGER.warning("Llama Guard context too small for the configured policy; widen context_count.")
             budget = 256
 
+        ceiling = min(budget * self.max_chunks * CHARS_PER_TOKEN_CEILING, self.max_scan_chars)
+        if len(content) > ceiling:
+            LOGGER.info("Truncating paste from %d to %d chars before Llama Guard scan.", len(content), ceiling)
+            content = content[:ceiling]
+
         tokens = self.llama.tokenize(content.encode(errors="ignore"), add_bos=False)
         if len(tokens) <= budget:
             return [content]
@@ -124,33 +205,57 @@ class LlamaScanner(BaseScanner):
 
         return chunks
 
-    def unsafe_probability(self, logprobs: CompletionLogprobs | None) -> float | None:
-        if not logprobs:
+    def _eval_with_prefix_reuse(self, tokens: list[int]) -> None:
+        assert self.llama is not None
+
+        cached = self.llama.input_ids[: self.llama.n_tokens].tolist()
+        common = Llama.longest_token_prefix(cached, tokens)
+        common = max(0, min(common, len(tokens) - 1))
+
+        self.llama.n_tokens = common
+        self.llama.eval(tokens[common:])
+
+    def decision_probability(self, prompt: str) -> float | None:
+        assert self.llama is not None
+
+        if not self._fast_path:
             return None
 
-        for top in logprobs.get("top_logprobs") or []:
-            if not top:
-                continue
+        tokens = self.llama.tokenize(prompt.encode("utf-8"), add_bos=False, special=True)
+        if len(tokens) >= self.ctx_count:
+            raise ValueError(f"prompt of {len(tokens)} tokens exceeds context of {self.ctx_count}")
 
-            safe_p = 0.0
-            unsafe_p = 0.0
+        self._eval_with_prefix_reuse(tokens)
 
-            for token, logprob in top.items():
-                cleaned = token.strip().lower()
+        logits = np.ctypeslib.as_array(self.llama._ctx.get_logits_ith(-1), shape=(self.llama.n_vocab(),))
+        safe_logit = float(logits[self._safe_id])
+        unsafe_logit = float(logits[self._unsafe_id])
 
-                if not cleaned:
-                    continue
-                if cleaned.startswith("unsafe") or cleaned in {"uns", "un"}:
-                    unsafe_p += math.exp(logprob)
-                elif cleaned.startswith("safe"):
-                    safe_p += math.exp(logprob)
+        ceiling = max(safe_logit, unsafe_logit)
+        safe_p = math.exp(safe_logit - ceiling)
+        unsafe_p = math.exp(unsafe_logit - ceiling)
 
-            total = safe_p + unsafe_p
+        return unsafe_p / (safe_p + unsafe_p)
 
-            if total > 0:
-                return unsafe_p / total
+    def classify_categories(self, prompt: str) -> tuple[float, set[str]]:
+        assert self.llama is not None
 
-        return None
+        resp = self.llama.create_completion(
+            prompt=prompt,
+            max_tokens=16,
+            temperature=0.0,
+            stop=["<|eot_id|>"],
+        )
+
+        if not isinstance(resp, dict):
+            raise ValueError(f"Llama Guard returned an unknown resp type. Expected dict got {type(resp)}.")
+
+        text: str = (resp["choices"][0].get("text") or "").strip()
+        if not text:
+            raise ValueError("empty response")
+
+        probability = 1.0 if text.splitlines()[0].strip().lower() == "unsafe" else 0.0
+        return probability, self.parse_categories(text)
 
     def parse_categories(self, output: str) -> set[str]:
         lines = [line.strip() for line in output.strip().splitlines() if line.strip()]
@@ -170,30 +275,18 @@ class LlamaScanner(BaseScanner):
         return found
 
     def evaluate(self, content: str) -> tuple[float, set[str]]:
-        assert self.llama is not None
+        prompt = self.build_prompt(content)
+        floor = min(max(self._min_floor + self.threshold_offset, 0.05), 0.99)
 
-        resp = self.llama.create_completion(
-            prompt=self.build_prompt(content),
-            max_tokens=48,
-            temperature=0.0,
-            logprobs=10,
-            stop=["<|eot_id|>"],
-        )
+        probability = self.decision_probability(prompt)
+        if probability is not None and probability < floor:
+            return probability, set()
 
-        if not isinstance(resp, dict):
-            raise ValueError("Llama Guard returned an unknown resp type. Excpected dict got '%s'.", type(resp))
-
-        choice = resp["choices"][0]
-        text: str = (choice.get("text") or "").strip()
-
-        if not text:
-            raise ValueError("empty response")
-
-        probability = self.unsafe_probability(choice.get("logprobs"))
+        generated_probability, categories = self.classify_categories(prompt)
         if probability is None:
-            probability = 1.0 if text.splitlines()[0].strip().lower() == "unsafe" else 0.0
+            probability = generated_probability
 
-        return probability, self.parse_categories(text)
+        return probability, categories
 
     def scan(self, file: FilePaste) -> ScanResult | None:
         if not self._enabled or not self.llama:
@@ -207,7 +300,7 @@ class LlamaScanner(BaseScanner):
         for chunk in self.chunk_content(file["content"]):
             try:
                 probability, found = self.evaluate(chunk)
-            except (ValueError, KeyError, IndexError) as error:
+            except (ValueError, KeyError, IndexError, RuntimeError) as error:
                 LOGGER.warning(
                     "Llama Guard AI responded with invalid output (%s, %s): %s",
                     file["paste_id"],
