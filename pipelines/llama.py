@@ -42,6 +42,7 @@ class LlamaScanner(BaseScanner):
     def __init__(self) -> None:
         self._enabled: bool = False
         self.llama: Llama | None = None
+        self.ctx_count: int = 2048
 
     def compile(self) -> None:
         self._enabled = CONFIG["yara"]["enable"]
@@ -54,7 +55,8 @@ class LlamaScanner(BaseScanner):
             self._enabled = False
             return
 
-        self.llama = Llama(model_path=str(fp), n_ctx=2048, n_gpu_layers=0, verbose=False)
+        self.ctx_count = CONFIG["llama"]["context_count"] or self.ctx_count
+        self.llama = Llama(model_path=str(fp), n_ctx=self.ctx_count, n_gpu_layers=0, verbose=False)
         LOGGER.info("Successfully setup Llama-Guard AI Scanner...")
 
     def build_prompt(self, content: str) -> str:
@@ -80,7 +82,7 @@ class LlamaScanner(BaseScanner):
 
         <BEGIN CONVERSATION>
 
-        User: {content}
+        User: {content[: self.ctx_count - 500]}
 
         <END CONVERSATION>
 

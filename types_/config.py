@@ -40,6 +40,7 @@ class YARAConfigT(TypedDict):
 class LlamaConfigT(TypedDict):
     enable: bool
     model_path: str
+    context_count: int
 
 
 class NotifierConfigT(TypedDict):

@@ -11,6 +11,7 @@ database:
 llama:
   enable: true
   model_path: "resources/models/Llama-Guard-3-1B.Q4_K_M.gguf"
+  context_count: 16384
 
 yara:
   enable: true
