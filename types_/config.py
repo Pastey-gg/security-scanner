@@ -41,6 +41,8 @@ class LlamaConfigT(TypedDict):
     enable: bool
     model_path: str
     context_count: int
+    threshold_offset: float
+    max_chunks: int
 
 
 class NotifierConfigT(TypedDict):

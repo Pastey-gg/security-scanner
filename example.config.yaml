@@ -12,6 +12,8 @@ llama:
   enable: true
   model_path: "resources/models/Llama-Guard-3-1B.Q4_K_M.gguf"
   context_count: 16384
+  threshold_offset: 0.0
+  max_chunks: 4
 
 yara:
   enable: true
