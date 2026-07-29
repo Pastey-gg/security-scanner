@@ -60,7 +60,7 @@ class LlamaScanner(BaseScanner):
     def build_prompt(self, content: str) -> str:
         return f"""<|start_header_id|>user<|end_header_id|>
 
-        Task: Check if there is unsafe content in 'User' messages in conversations according to our safety policy with the below categories.
+        Task: Check if there is unsafe content in 'User' messages in pastes for a code sharing platform according to our safety policy with the below categories.
 
         <BEGIN UNSAFE CONTENT CATEGORIES>
         S1: Violent Crimes.
@@ -84,7 +84,7 @@ class LlamaScanner(BaseScanner):
 
         <END CONVERSATION>
 
-        Provide your safety assessment for ONLY THE LAST User message in the above conversation:
+        Provide your safety assessment for ONLY THE LAST User message in the above conversation (code paste):
         - First line must read 'safe' or 'unsafe'.
         - If unsafe, a second line must include a comma-separated list of violated categories.<|eot_id|><|start_header_id|>assistant<|end_header_id|>"""
 
