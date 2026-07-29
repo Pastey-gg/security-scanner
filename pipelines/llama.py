@@ -36,7 +36,7 @@ LOGGER: logging.Logger = logging.getLogger(__name__)
 class LlamaScanner(BaseScanner):
     PRIORITY = 3
     SERVICE = ScanService.LLAMA
-    FAILED_CATEGORIES = ("s1", "s3", "s4", "s5", "s6", "s7", "s9", "s11")
+    FAILED_CATEGORIES = ("s1", "s3", "s4", "s5", "s6", "s9", "s11")
     SEVERE_CATEGORIES = ("s3", "s4", "s11")
 
     def __init__(self) -> None:
