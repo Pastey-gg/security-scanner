@@ -84,10 +84,7 @@ class Handler:
         for runner in self.worker.runners:
             result = runner.scan(file)
 
-            if not result:
-                continue
-
-            if result.status is not ScanStatus.clear:
+            if result:
                 return result
 
     def process_result(self, result: ScanResult) -> ScanResult | None:
