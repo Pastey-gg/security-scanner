@@ -45,4 +45,4 @@ class RuleT(TypedDict):
     name: str
     type: Literal["simple", "regex"]
     rule: list[str] | str
-    action: Literal["review", "fail"]
+    action: Literal["review", "fail", "clear"]

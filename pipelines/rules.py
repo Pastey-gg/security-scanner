@@ -83,7 +83,22 @@ class RulesScanner(BaseScanner):
 
         result = None
         for rule in self.rules:
-            if rule.type is RuleType.simple:
+            if rule.action is ScanStatus.clear and rule.type is RuleType.simple:
+                assert isinstance(rule.rule, set)
+                result = self.do_compund(name, content, rules=rule.rule)
+
+                if result:
+                    return ScanResult(
+                        status=rule.action,
+                        service=self.SERVICE,
+                        severity=ScanSeverity.none,
+                        reason=f"Green Flag Rule: {rule.name}",
+                        paste_id=paste_id,
+                        timestamp=datetime.datetime.now(tz=datetime.UTC),
+                        lines=None,
+                    )
+
+            elif rule.type is RuleType.simple:
                 assert isinstance(rule.rule, set)
 
                 result = self.do_compund(name, content, rules=rule.rule)
