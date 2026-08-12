@@ -63,15 +63,21 @@ class RulesScanner(BaseScanner):
 
             if type_ is RuleType.regex:
                 assert isinstance(raw, str)
-                compiled = re.compile(raw)
+                compiled = re.compile(raw, re.IGNORECASE)
             else:
                 compiled = set(raw) if isinstance(raw, list) else {raw}
 
             rule = Rule(name=r["name"], type=type_, action=action, rule=compiled)
             self.rules.append(rule)
 
+    def normalize(self, content: str) -> str:
+        return content.replace("\r\n", "\n").replace("\r", "\n")
+
     def do_compund(self, name: str, content: str, *, rules: set[str]) -> bool:
         return all(t.lower() in content or t.lower() in name for t in rules)
+
+    def do_regex(self, name: str, content: str, *, rule: re.Pattern[str]) -> bool:
+        return rule.search(self.normalize(content)) is not None
 
     def scan_file(self, file: FilePaste) -> ScanResult | None:
         name = file["name"] or "".lower()
@@ -103,8 +109,9 @@ class RulesScanner(BaseScanner):
 
                 result = self.do_compund(name, content, rules=rule.rule)
             elif rule.type is RuleType.regex:
-                # TODO: ...
-                ...
+                assert isinstance(rule.rule, re.Pattern)
+
+                result = self.do_regex(name, content, rule=rule.rule)
 
             if result:
                 action = rule.action
